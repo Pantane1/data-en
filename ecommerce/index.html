@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RecSys Guide — E-Commerce Recommendation Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0a0f;
+    --ink2: #12121a;
+    --ink3: #1c1c28;
+    --surface: #1a1a26;
+    --surface2: #22223a;
+    --line: rgba(255,255,255,0.07);
+    --line2: rgba(255,255,255,0.12);
+    --gold: #e8c97a;
+    --gold2: #f0d89a;
+    --cyan: #5de8c8;
+    --coral: #f07060;
+    --muted: rgba(255,255,255,0.45);
+    --body: rgba(255,255,255,0.72);
+    --heading: #ffffff;
+    --accent: #7b6ef6;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--body);
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.6;
+  }
+
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 3rem;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--heading); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8rem 3rem 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 100%);
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 700px; height: 700px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(123,110,246,0.15) 0%, transparent 70%);
+    top: -150px; right: -150px;
+    pointer-events: none;
+  }
+
+  .hero-glow2 {
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(93,232,200,0.08) 0%, transparent 70%);
+    bottom: -50px; left: 50px;
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3.2rem, 8vw, 7rem);
+    line-height: 0.92;
+    color: var(--heading);
+    letter-spacing: -0.025em;
+    max-width: 900px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--gold);
+    font-family: 'Instrument Serif', serif;
+  }
+
+  .hero-sub {
+    margin-top: 2rem;
+    font-size: 16px;
+    color: var(--body);
+    max-width: 540px;
+    line-height: 1.8;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+  }
+
+  .hero-tags {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 5px 14px;
+    border: 1px solid var(--line2);
+    border-radius: 2px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .tag.hl { border-color: var(--gold); color: var(--gold); }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0;
+    animation: fadeUp 0.8s 1s forwards;
+  }
+
+  .scroll-line { width: 40px; height: 1px; background: var(--muted); }
+
+  /* SECTIONS */
+  section { padding: 6rem 3rem; max-width: 1200px; margin: 0 auto; }
+
+  .fw-section { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--ink2); padding: 6rem 3rem; }
+  .fw-inner { max-width: 1200px; margin: 0 auto; }
+
+  .full-divider { border: none; border-top: 1px solid var(--line); margin: 0; }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .section-label::after { content: ''; flex: 0 0 40px; height: 1px; background: var(--muted); }
+
+  .section-heading {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    color: var(--heading);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+  }
+  .section-heading em { font-style: italic; font-family: 'Instrument Serif', serif; color: var(--gold); }
+
+  .section-sub { color: var(--body); max-width: 560px; margin-bottom: 2.5rem; font-size: 15px; line-height: 1.8; }
+
+  /* CONCEPTS GRID */
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 3rem;
+  }
+
+  .concept-card { background: var(--ink2); padding: 2rem; transition: background 0.25s; }
+  .concept-card:hover { background: var(--ink3); }
+  .concept-card.featured { border-top: 2px solid var(--gold); }
+
+  .concept-icon { font-size: 28px; margin-bottom: 1rem; display: block; }
+  .concept-type { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+  .concept-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: var(--heading); margin-bottom: 0.75rem; line-height: 1.2; }
+  .concept-desc { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 1rem; }
+  .concept-algo { font-size: 11px; color: var(--cyan); letter-spacing: 0.05em; }
+  .concept-algo::before { content: '→ '; }
+  .concept-algo.gold-algo { color: var(--gold); }
+
+  /* VOCAB */
+  .vocab-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .vocab-item { background: var(--ink2); padding: 1.5rem 2rem; transition: background 0.2s; }
+  .vocab-item:hover { background: var(--surface); }
+  .vocab-term { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--gold); margin-bottom: 0.4rem; }
+  .vocab-def { font-size: 13px; color: var(--body); line-height: 1.65; }
+
+  /* MATH */
+  .math-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+
+  .math-card {
+    background: var(--ink2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .math-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .math-card.blue::before { background: var(--accent); }
+  .math-card.green::before { background: var(--cyan); }
+  .math-card.gold::before { background: var(--gold); }
+
+  .math-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
+  .math-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; color: var(--heading); margin-bottom: 1rem; line-height: 1.2; }
+  .math-body { font-size: 13px; color: var(--body); line-height: 1.7; margin-bottom: 1rem; }
+
+  .code-block {
+    background: var(--ink);
+    border: 1px solid var(--line2);
+    border-radius: 4px;
+    padding: 1.25rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--body);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .kw { color: var(--accent); }
+  .cm { color: var(--muted); font-style: italic; }
+  .str { color: var(--gold); }
+  .fn { color: var(--cyan); }
+  .num { color: var(--coral); }
+
+  /* METRICS */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 2rem;
+  }
+  .metric-cell { background: var(--ink2); padding: 2rem; text-align: center; }
+  .metric-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; color: var(--heading); margin-bottom: 0.4rem; }
+  .metric-dir { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--cyan); margin-bottom: 0.75rem; }
+  .metric-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  /* STACK */
+  .stack-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .stack-item { display: grid; grid-template-columns: 64px 1fr; background: var(--ink2); transition: background 0.2s; }
+  .stack-item:hover { background: var(--surface); }
+  .stack-num {
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 2rem 0;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 26px;
+    color: var(--line2);
+    border-right: 1px solid var(--line);
+  }
+  .stack-num.sm { font-size: 16px; align-items: center; }
+  .stack-content { padding: 1.5rem 2rem; }
+  .stack-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: var(--heading); margin-bottom: 0.4rem; }
+  .stack-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+  code {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    background: var(--surface2);
+    padding: 1px 6px;
+    border-radius: 2px;
+    color: var(--cyan);
+  }
+
+  /* ROADMAP */
+  .roadmap-list { position: relative; padding-left: 2px; }
+  .roadmap-line { position: absolute; left: 22px; top: 44px; bottom: 44px; width: 1px; background: var(--line2); }
+  .roadmap-item { display: flex; gap: 2rem; position: relative; }
+  .roadmap-dot {
+    width: 44px; min-width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--ink3);
+    border: 1px solid var(--line2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 12px;
+    color: var(--muted);
+    position: relative; z-index: 1; flex-shrink: 0; margin-top: 1rem;
+    transition: all 0.25s;
+  }
+  .roadmap-item:hover .roadmap-dot { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+  .roadmap-body {
+    background: var(--ink2); border: 1px solid var(--line); border-radius: 4px;
+    padding: 1.5rem 2rem; flex: 1; margin-bottom: 1rem;
+    transition: background 0.2s, border-color 0.2s; cursor: default;
+  }
+  .roadmap-item:hover .roadmap-body { background: var(--surface); border-color: var(--line2); }
+  .roadmap-week { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+  .roadmap-phase { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: var(--heading); margin-bottom: 0.5rem; }
+  .roadmap-tasks { font-size: 13px; color: var(--muted); line-height: 1.65; }
+  .bar-wrap { height: 3px; background: var(--line2); border-radius: 2px; margin-top: 1rem; overflow: hidden; }
+  .bar { height: 100%; border-radius: 2px; background: var(--gold); }
+
+  /* PITFALLS */
+  .pitfalls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 3rem;
+  }
+  .pitfall-card { background: var(--ink2); padding: 2rem; transition: background 0.2s, border-left-color 0.2s; border-left: 2px solid transparent; }
+  .pitfall-card:hover { background: var(--surface); border-left-color: var(--coral); }
+  .pitfall-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 42px; color: var(--line2); line-height: 1; margin-bottom: 1rem; }
+  .pitfall-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--coral); margin-bottom: 0.5rem; }
+  .pitfall-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+  /* COLLAB */
+  .collab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  .collab-card { background: var(--ink2); border: 1px solid var(--line); border-radius: 4px; padding: 2rem; position: relative; overflow: hidden; }
+  .collab-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .collab-card.you::after { background: var(--gold); }
+  .collab-card.partner::after { background: var(--cyan); }
+  .collab-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: var(--heading); margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line); }
+  .collab-item { display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.75rem; font-size: 13px; color: var(--body); line-height: 1.5; }
+  .cdot { width: 6px; height: 6px; min-width: 6px; border-radius: 50%; margin-top: 6px; }
+  .you .cdot { background: var(--gold); }
+  .partner .cdot { background: var(--cyan); }
+
+  /* BOXES */
+  .warn { background: rgba(240,112,96,0.07); border: 1px solid rgba(240,112,96,0.25); border-radius: 4px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; font-size: 13px; color: var(--body); line-height: 1.65; }
+  .warn strong { color: var(--coral); }
+  .tip { background: rgba(93,232,200,0.05); border: 1px solid rgba(93,232,200,0.2); border-radius: 4px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; font-size: 13px; color: var(--body); line-height: 1.65; }
+  .tip strong { color: var(--cyan); }
+
+  /* UPGRADES */
+  .upgrades-list { display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .upgrade-item { display: flex; align-items: flex-start; gap: 1.5rem; padding: 1.5rem 2rem; background: var(--ink2); transition: background 0.2s; }
+  .upgrade-item:hover { background: var(--surface); }
+  .upgrade-plus { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--cyan); min-width: 24px; margin-top: 2px; }
+  .upgrade-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--heading); margin-bottom: 0.3rem; }
+  .upgrade-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* FOOTER */
+  footer { border-top: 1px solid var(--line); padding: 3rem; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); letter-spacing: 0.05em; }
+  .footer-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+  .reveal { opacity:0; transform:translateY(20px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+
+  /* SUB HEADING */
+  .sub-heading { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.75rem; color: var(--heading); margin: 2.5rem 0 1rem; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .hero { padding: 7rem 1.5rem 4rem; }
+    section { padding: 4rem 1.5rem; }
+    .fw-section { padding: 4rem 1.5rem; }
+    .concepts-grid, .math-layout, .pitfalls-grid, .collab-grid { grid-template-columns: 1fr; }
+    .vocab-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+
+  @media (max-width: 600px) {
+    .metrics-row { grid-template-columns: 1fr; }
+    .stack-num { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">RecSys Guide</a>
+  <ul class="nav-links">
+    <li><a href="#concepts">Concepts</a></li>
+    <li><a href="#math">Math</a></li>
+    <li><a href="#stack">Stack</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#collab">Collab</a></li>
+    <li><a href="#pitfalls">Pitfalls</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-eyebrow">Cloud Analytics · First Project · Complete Reference</div>
+  <h1>E-Commerce<br><em>Recommendation</em><br>Systems</h1>
+  <p class="hero-sub">Everything you and your collab partner need — from the core concepts and the math behind them, to the tech stack, 5-week roadmap, and the pitfalls most beginners hit.</p>
+  <div class="hero-tags">
+    <span class="tag hl">PySpark · ALS</span>
+    <span class="tag">Databricks Free Tier</span>
+    <span class="tag">Collaborative Filtering</span>
+    <span class="tag">Content-Based Filtering</span>
+    <span class="tag">Flask API</span>
+    <span class="tag">Cold Start</span>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    Scroll to explore
+  </div>
+</div>
+
+<hr class="full-divider">
+
+<!-- 01 CONCEPTS -->
+<section id="concepts">
+  <div class="section-label">01 — Core Concepts</div>
+  <h2 class="section-heading">Three ways to <em>recommend</em></h2>
+  <p class="section-sub">A recommendation system predicts what a user wants next. It learns patterns — either from how users behave, or from what the products look like.</p>
+
+  <div class="concepts-grid reveal">
+    <div class="concept-card">
+      <span class="concept-icon">👥</span>
+      <div class="concept-type">Type 01</div>
+      <div class="concept-name">Collaborative Filtering</div>
+      <p class="concept-desc">"Users like you also bought X." Finds similar users, recommends what they liked. Doesn't need to know anything about the products — only the interactions between users and items.</p>
+      <div class="concept-algo">Algorithm: ALS (Alternating Least Squares)</div>
+    </div>
+    <div class="concept-card">
+      <span class="concept-icon">🏷️</span>
+      <div class="concept-type">Type 02</div>
+      <div class="concept-name">Content-Based Filtering</div>
+      <p class="concept-desc">"This is similar to things you viewed." Looks at product attributes — category, description, price — and recommends similar items. Great for new products with no interaction history yet.</p>
+      <div class="concept-algo">Algorithm: TF-IDF + Cosine Similarity</div>
+    </div>
+    <div class="concept-card featured">
+      <span class="concept-icon">🔀</span>
+      <div class="concept-type">Type 03 — What real companies use</div>
+      <div class="concept-name">Hybrid Filtering</div>
+      <p class="concept-desc">Combines both approaches. Collaborative handles known users well. Content-based handles new products well. Together they cover each other's blind spots. You'll build both, then combine them.</p>
+      <div class="concept-algo gold-algo">Best of both worlds</div>
+    </div>
+  </div>
+
+  <div class="sub-heading reveal">Key vocabulary <em style="font-family:'Instrument Serif',serif; color:var(--gold); font-style:italic;">you must know</em></div>
+  <p class="section-sub">Know these cold before writing a single line of code.</p>
+
+  <div class="vocab-grid reveal">
+    <div class="vocab-item">
+      <div class="vocab-term">User-Item Matrix</div>
+      <div class="vocab-def">A table: rows = users, columns = products, cells = ratings. Most cells are empty — this sparsity is what makes the problem hard and interesting.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="vocab-term">Cold Start Problem</div>
+      <div class="vocab-def">New users or products have no history, so the algorithm can't personalise. Fix: popularity-based fallbacks for new users, content-based for new items.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="vocab-term">Matrix Factorization</div>
+      <div class="vocab-def">Breaks the big sparse matrix into two smaller matrices to find hidden patterns. This is what ALS does — it discovers "latent factors" nobody labelled explicitly.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="vocab-term">Latent Factors</div>
+      <div class="vocab-def">Hidden patterns the algorithm discovers — like "this user prefers budget outdoor gear" — even if that's never written anywhere in the data.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="vocab-term">Sparsity</div>
+      <div class="vocab-def">Most users only interact with a tiny fraction of all products. On Amazon, 99%+ of the user-item matrix is empty. Algorithms must handle this gracefully.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="vocab-term">Implicit vs Explicit Feedback</div>
+      <div class="vocab-def">Explicit = star ratings given. Implicit = clicks, purchases, time on page. Real e-commerce mostly has implicit — more abundant but harder to model.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="vocab-term">RMSE</div>
+      <div class="vocab-def">Root Mean Square Error — how far off your predictions are on average. RMSE of 1.2 on a 1–5 scale = off by 1.2 stars. Lower is better.</div>
+    </div>
+    <div class="vocab-item">
+      <div class="vocab-term">Precision@K / Recall@K</div>
+      <div class="vocab-def">Ranking metrics. Precision@5 = of your top 5 recs, how many relevant? Recall@5 = of all relevant items, how many did you catch? Both matter.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="full-divider">
+
+<!-- 02 MATH -->
+<div class="fw-section" id="math">
+  <div class="fw-inner">
+    <div class="section-label">02 — The Math</div>
+    <h2 class="section-heading">Don't panic — <em>PySpark handles it</em></h2>
+    <p class="section-sub">But understanding what's happening under the hood helps you debug errors, tune your model, and talk confidently about it in any presentation or interview.</p>
+
+    <div class="tip reveal">
+      <strong>The deal:</strong> PySpark handles all the matrix math automatically. You just set the parameters. But knowing the intuition behind ALS, TF-IDF, and cosine similarity will help you know what to adjust when results look wrong.
+    </div>
+
+    <div class="math-layout reveal">
+      <div class="math-card blue">
+        <div class="math-label">Algorithm 01 — Collaborative Filtering</div>
+        <div class="math-title">ALS — Alternating Least Squares</div>
+        <p class="math-body">You have a big table of users × products. Most cells are empty. ALS fills in the gaps by finding two smaller matrices whose product approximates the original.</p>
+        <div class="code-block"><span class="cm"># Big sparse matrix R (users × products)</span>
+R ≈ <span class="fn">U</span> × <span class="fn">Pᵀ</span>
+
+<span class="cm"># ALS alternates between solving:</span>
+Step <span class="num">1</span> → fix P, solve <span class="kw">for</span> U
+Step <span class="num">2</span> → fix U, solve <span class="kw">for</span> P
+Repeat until RMSE stops improving</div>
+        <p class="math-body" style="margin-top:1rem; font-size:12px;">Latent factors represent abstract features like "budget shopper" — the algorithm discovers these with no labels.</p>
+      </div>
+
+      <div class="math-card green">
+        <div class="math-label">Algorithm 02 — Content-Based</div>
+        <div class="math-title">Cosine Similarity</div>
+        <p class="math-body">After converting product descriptions to vectors with TF-IDF, measure the angle between two vectors. Closer to 1.0 = more similar.</p>
+        <div class="code-block">cosine_sim(A, B) =
+  (A · B) / (|A| × |B|)
+
+<span class="cm"># dot product / product of magnitudes</span>
+
+<span class="num">0.0</span> = totally different
+<span class="num">1.0</span> = identical</div>
+        <p class="math-body" style="margin-top:1rem; font-size:12px;">"wireless earbuds bluetooth" and "bluetooth wireless headphones" score high — shared vocabulary makes them similar even if different products.</p>
+      </div>
+    </div>
+
+    <div class="math-card gold reveal" style="margin-bottom:2rem;">
+      <div class="math-label">Feature Extraction — How text becomes numbers</div>
+      <div class="math-title">TF-IDF in PySpark</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; flex-wrap:wrap;">
+        <div>
+          <p class="math-body">TF-IDF measures how important each word is to a specific product vs all products. Common words like "the" get low scores; unique descriptive words get high scores.</p>
+          <div class="code-block">TF = word count in this doc
+     / total words in doc
+
+IDF = log(total docs
+      / docs with this word)
+
+TF-IDF = TF × IDF
+
+<span class="cm"># High = unique to this product</span>
+<span class="cm"># Low  = appears everywhere</span></div>
+        </div>
+        <div>
+          <p class="math-body">In PySpark, TF-IDF is a 3-stage Pipeline:</p>
+          <div class="code-block"><span class="kw">from</span> pyspark.ml.feature <span class="kw">import</span> (
+  <span class="fn">Tokenizer</span>, <span class="fn">HashingTF</span>, <span class="fn">IDF</span>
+)
+<span class="kw">from</span> pyspark.ml <span class="kw">import</span> <span class="fn">Pipeline</span>
+
+pipeline = <span class="fn">Pipeline</span>(stages=[
+  <span class="fn">Tokenizer</span>(
+    inputCol=<span class="str">"description"</span>,
+    outputCol=<span class="str">"tokens"</span>),
+  <span class="fn">HashingTF</span>(
+    inputCol=<span class="str">"tokens"</span>,
+    outputCol=<span class="str">"rawFeatures"</span>),
+  <span class="fn">IDF</span>(
+    inputCol=<span class="str">"rawFeatures"</span>,
+    outputCol=<span class="str">"features"</span>)
+])
+model = pipeline.<span class="fn">fit</span>(items_df)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-heading reveal">Evaluation metrics — report all three</div>
+
+    <div class="metrics-row reveal">
+      <div class="metric-cell">
+        <div class="metric-name">RMSE</div>
+        <div class="metric-dir">↓ lower is better</div>
+        <div class="metric-desc">Measures prediction accuracy for ratings. Target &lt;1.5 on a 1–5 scale. RMSE alone is beginner-level.</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-name">Precision@K</div>
+        <div class="metric-dir">↑ higher is better</div>
+        <div class="metric-desc">Of your top K recommendations, what fraction are actually relevant to this user?</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-name">Recall@K</div>
+        <div class="metric-dir">↑ higher is better</div>
+        <div class="metric-desc">Of all relevant items that exist, how many did your top K successfully catch?</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 03 STACK -->
+<section id="stack">
+  <div class="section-label">03 — Tech Stack</div>
+  <h2 class="section-heading">What you're <em>actually running</em></h2>
+  <p class="section-sub">Use Databricks Community Edition — not Azure HDInsight. Databricks is genuinely free. HDInsight charges by the minute and has burned many students' free credits.</p>
+
+  <div class="warn reveal">
+    <strong>Azure HDInsight warning:</strong> It charges per minute even when idle. Forgetting to delete (not just stop) the cluster after a session = significant credit burn. This is why we recommend Databricks CE.
+  </div>
+
+  <div class="stack-list reveal">
+    <div class="stack-item">
+      <div class="stack-num">01</div>
+      <div class="stack-content">
+        <div class="stack-title">Databricks Community Edition</div>
+        <p class="stack-desc">Your cloud environment. Free notebook workspace running PySpark. Sign up at <code>community.cloud.databricks.com</code> — no credit card needed. Both of you sign up and verify you can create a cluster before Week 1 starts.</p>
+      </div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-num">02</div>
+      <div class="stack-content">
+        <div class="stack-title">PySpark (Apache Spark)</div>
+        <p class="stack-desc">The data processing engine. Handles datasets too large for pandas. You'll mainly use <code>pyspark.ml.recommendation.ALS</code> and <code>pyspark.ml.feature</code>. Already installed in Databricks — zero setup.</p>
+      </div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-num">03</div>
+      <div class="stack-content">
+        <div class="stack-title">MovieLens 100K (starting dataset)</div>
+        <p class="stack-desc">Start small. Well-documented, structured exactly right: <code>user_id, movie_id, rating, timestamp</code>. Once your full pipeline works, swap in a real e-commerce dataset. Free at <code>grouplens.org/datasets/movielens</code>.</p>
+      </div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-num">04</div>
+      <div class="stack-content">
+        <div class="stack-title">Flask API — the portfolio upgrade</div>
+        <p class="stack-desc">Wrap your trained model in a Flask endpoint: <code>GET /recommend?user_id=1001</code> → JSON recommendations. This separates a notebook project from a real deployable product. Your territory — Flask + Python is your stack.</p>
+      </div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-num">05</div>
+      <div class="stack-content">
+        <div class="stack-title">GitHub — shared repo + v1.0.0 release</div>
+        <p class="stack-desc">One shared repo. Main = stable. Feature branches per person. Databricks links directly to GitHub. Tag a <code>v1.0.0</code> release when done with README, setup steps, and sample API calls.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub-heading reveal">The ALS model — core code</div>
+  <div class="code-block reveal"><span class="kw">from</span> pyspark.ml.recommendation <span class="kw">import</span> <span class="fn">ALS</span>
+<span class="kw">from</span> pyspark.ml.evaluation <span class="kw">import</span> <span class="fn">RegressionEvaluator</span>
+
+<span class="cm"># 1. Split data</span>
+train, test = df.randomSplit([<span class="num">0.8</span>, <span class="num">0.2</span>])
+
+<span class="cm"># 2. Build and train the model</span>
+als = <span class="fn">ALS</span>(
+  userCol=<span class="str">"user_id"</span>,
+  itemCol=<span class="str">"item_id"</span>,
+  ratingCol=<span class="str">"rating"</span>,
+  coldStartStrategy=<span class="str">"drop"</span>,  <span class="cm"># critical — handles new users</span>
+  nFactors=<span class="num">10</span>,               <span class="cm"># start here, tune up if needed</span>
+  maxIter=<span class="num">10</span>
+)
+model = als.<span class="fn">fit</span>(train)
+predictions = model.<span class="fn">transform</span>(test)
+
+<span class="cm"># 3. Evaluate</span>
+evaluator = <span class="fn">RegressionEvaluator</span>(
+  metricName=<span class="str">"rmse"</span>,
+  labelCol=<span class="str">"rating"</span>,
+  predictionCol=<span class="str">"prediction"</span>
+)
+rmse = evaluator.<span class="fn">evaluate</span>(predictions)
+<span class="fn">print</span>(<span class="str">f"RMSE = {rmse:.4f}"</span>)
+
+<span class="cm"># 4. Generate top-10 recommendations for all users</span>
+user_recs = model.<span class="fn">recommendForAllUsers</span>(<span class="num">10</span>)</div>
+</section>
+
+<hr class="full-divider">
+
+<!-- 04 ROADMAP -->
+<div class="fw-section" id="roadmap">
+  <div class="fw-inner">
+    <div class="section-label">04 — 5-Week Roadmap</div>
+    <h2 class="section-heading">One phase <em>at a time</em></h2>
+    <p class="section-sub">Don't rush ahead with messy data. Each phase depends on the previous one. Week 1 always takes longer than expected — that's normal and expected.</p>
+
+    <div class="roadmap-list reveal">
+      <div class="roadmap-line"></div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot">W1</div>
+        <div class="roadmap-body">
+          <div class="roadmap-week">Week 1</div>
+          <div class="roadmap-phase">Data Preparation</div>
+          <p class="roadmap-tasks">Sign up for Databricks both of you · Download MovieLens 100K · Load into Spark DataFrame · Handle nulls and duplicates · Encode string IDs to integers with StringIndexer · Split train/test 80/20 · Explore the data with basic stats before modelling</p>
+          <div class="bar-wrap"><div class="bar" style="width:20%"></div></div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot">W2</div>
+        <div class="roadmap-body">
+          <div class="roadmap-week">Week 2</div>
+          <div class="roadmap-phase">Collaborative Filtering (ALS)</div>
+          <p class="roadmap-tasks">Understand ALS conceptually before coding · Train first ALS model · Generate top-10 recs for test users · Evaluate with RMSE · Tune nFactors (try 10, 20, 50) and maxIter · Document what each parameter does and why you changed it</p>
+          <div class="bar-wrap"><div class="bar" style="width:40%"></div></div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot">W3</div>
+        <div class="roadmap-body">
+          <div class="roadmap-week">Week 3 — most projects fail here</div>
+          <div class="roadmap-phase">Cold Start Problem</div>
+          <p class="roadmap-tasks">Identify new users and new items in your test set · Implement popularity-based fallback for new users (top-N most-rated items) · Use content-based recs for new items · Test that your system returns something useful — not a crash or NaN — for cold users</p>
+          <div class="bar-wrap"><div class="bar" style="width:60%"></div></div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot">W4</div>
+        <div class="roadmap-body">
+          <div class="roadmap-week">Week 4</div>
+          <div class="roadmap-phase">Content-Based Filtering + Hybrid</div>
+          <p class="roadmap-tasks">Build TF-IDF pipeline on product descriptions/categories · Compute cosine similarity between items · Generate item-to-item recommendations · Combine with ALS output for hybrid results · Add Precision@K and Recall@K to your evaluation report</p>
+          <div class="bar-wrap"><div class="bar" style="width:80%"></div></div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot">W5</div>
+        <div class="roadmap-body">
+          <div class="roadmap-week">Week 5 — the finish line</div>
+          <div class="roadmap-phase">Deploy + Visualize + Ship</div>
+          <p class="roadmap-tasks">Save trained model with pickle · Build Flask API with /recommend endpoint · Create dashboard showing recommendations for sample users · Write README documentation · Tag v1.0.0 GitHub release · Inspect actual recommendation outputs manually — are they sensible and diverse?</p>
+          <div class="bar-wrap"><div class="bar" style="width:100%; background:var(--cyan);"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip reveal" style="margin-top:2rem;">
+      <strong>Reality check:</strong> If data prep takes 2 weeks instead of 1 — that's completely normal. Data cleaning always takes longer than you expect. Don't rush to Week 2 with messy data; it causes hard-to-debug errors in every phase after.
+    </div>
+  </div>
+</div>
+
+<!-- 05 COLLAB -->
+<section id="collab">
+  <div class="section-label">05 — Collaboration Split</div>
+  <h2 class="section-heading">Who owns <em>what</em></h2>
+  <p class="section-sub">Clear ownership prevents duplicated effort and ensures both of you have distinct, demonstrable contributions to show independently.</p>
+
+  <div class="collab-grid reveal">
+    <div class="collab-card you">
+      <div class="collab-name">You (Pantane)</div>
+      <div class="collab-item"><div class="cdot"></div><span>Flask API + deployment — your core strength</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>ALS model training and RMSE evaluation</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>Databricks data pipeline setup and structure</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>GitHub repo, README, v1.0.0 release packaging</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>Cold start logic + hybrid combination strategy</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>Backend architecture decisions</span></div>
+    </div>
+    <div class="collab-card partner">
+      <div class="collab-name">Your Partner</div>
+      <div class="collab-item"><div class="cdot"></div><span>Data cleaning and exploratory analysis (EDA)</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>Content-based filtering — TF-IDF pipeline build</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>Looker Studio or Power BI dashboard</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>Precision@K and Recall@K evaluation metrics</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>Project documentation and presentation slides</span></div>
+      <div class="collab-item"><div class="cdot"></div><span>Dataset research and final selection</span></div>
+    </div>
+  </div>
+
+  <div class="sub-heading reveal">Four questions to align on before starting</div>
+
+  <div class="stack-list reveal">
+    <div class="stack-item">
+      <div class="stack-num sm">Q1</div>
+      <div class="stack-content">
+        <div class="stack-title">Which cloud platform?</div>
+        <p class="stack-desc">Databricks CE is the safer choice — no billing risk. Both of you sign up and verify you can create and run a basic cluster <em>before</em> Week 1 starts. If one of you can't log in, you lose a full week.</p>
+      </div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-num sm">Q2</div>
+      <div class="stack-content">
+        <div class="stack-title">Which dataset to start with?</div>
+        <p class="stack-desc">MovieLens 100K to start — small, structured, well-documented. Switch to Amazon Reviews or Mercari once your pipeline works end-to-end. Don't start big.</p>
+      </div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-num sm">Q3</div>
+      <div class="stack-content">
+        <div class="stack-title">How to share code?</div>
+        <p class="stack-desc">One shared GitHub repo. Main = stable. Each person in their own feature branch. Merge via pull requests. Databricks notebooks link directly to GitHub — set this up in Week 1, not Week 4.</p>
+      </div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-num sm">Q4</div>
+      <div class="stack-content">
+        <div class="stack-title">Weekly check-in rhythm?</div>
+        <p class="stack-desc">30-minute call or voice note every Friday. Sync progress, unblock each other, adjust the plan. Use a shared Google Doc to track ownership. Don't wing the collaboration — it drifts fast without structure.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="full-divider">
+
+<!-- 06 PITFALLS -->
+<div class="fw-section" id="pitfalls">
+  <div class="fw-inner">
+    <div class="section-label">06 — Common Pitfalls</div>
+    <h2 class="section-heading">Mistakes most <em>beginners make</em></h2>
+    <p class="section-sub">These aren't hypothetical — they're the exact issues that trip up first-time recommendation system projects. Know them now, not the hard way.</p>
+
+    <div class="pitfalls-grid reveal">
+      <div class="pitfall-card">
+        <div class="pitfall-num">01</div>
+        <div class="pitfall-title">Integer encoding skipped</div>
+        <p class="pitfall-desc">PySpark ALS requires <code>user_id</code> and <code>item_id</code> to be integers. String IDs like "user_abc" throw a cryptic error. Fix: use <code>StringIndexer</code> before running ALS. This is the #1 first bug everyone hits.</p>
+      </div>
+      <div class="pitfall-card">
+        <div class="pitfall-num">02</div>
+        <div class="pitfall-title">NaN predictions not handled</div>
+        <p class="pitfall-desc">ALS returns NaN for users or items it hasn't seen during training. Without <code>coldStartStrategy="drop"</code>, your RMSE evaluation will return NaN too. Always set this parameter explicitly.</p>
+      </div>
+      <div class="pitfall-card">
+        <div class="pitfall-num">03</div>
+        <div class="pitfall-title">Too many latent factors too early</div>
+        <p class="pitfall-desc">Setting <code>nFactors=50</code> on a small dataset causes overfitting — great training RMSE, terrible test RMSE. Start with 10. Only increase if test set RMSE is still high.</p>
+      </div>
+      <div class="pitfall-card">
+        <div class="pitfall-num">04</div>
+        <div class="pitfall-title">Wrong train/test split strategy</div>
+        <p class="pitfall-desc">A random 80/20 split can put all of a user's interactions in training, inflating your metrics. Proper: hold out the last interaction per user. For a first project, random is fine — just know the limitation when you write up.</p>
+      </div>
+      <div class="pitfall-card">
+        <div class="pitfall-num">05</div>
+        <div class="pitfall-title">Deploying before inspecting outputs</div>
+        <p class="pitfall-desc">Good RMSE doesn't mean good recommendations. Before Week 5, manually inspect recs for 5–10 users. If everyone gets the same 10 popular items, you have popularity bias — a common failure mode that metrics alone don't catch.</p>
+      </div>
+      <div class="pitfall-card">
+        <div class="pitfall-num">06</div>
+        <div class="pitfall-title">Azure cluster left running</div>
+        <p class="pitfall-desc">If you choose Azure, always delete the cluster (not just stop it) after each session. Left running overnight = significant credit burn. This is the main reason we recommend Databricks CE instead.</p>
+      </div>
+    </div>
+
+    <div class="sub-heading reveal">Portfolio upgrade checklist</div>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:1.5rem;">Do these to go from a good project to a great one.</p>
+
+    <div class="upgrades-list reveal">
+      <div class="upgrade-item">
+        <div class="upgrade-plus">+</div>
+        <div>
+          <div class="upgrade-title">Flask API with /recommend endpoint</div>
+          <p class="upgrade-desc">Makes the project callable. <code>GET /recommend?user_id=1001</code> returns JSON recommendations. Separates a notebook from a real product — and it's fully in your wheelhouse.</p>
+        </div>
+      </div>
+      <div class="upgrade-item">
+        <div class="upgrade-plus">+</div>
+        <div>
+          <div class="upgrade-title">Report RMSE and Precision@K together</div>
+          <p class="upgrade-desc">RMSE alone is beginner-level. Adding ranking metrics shows you understand recommendation quality beyond raw prediction error. About 10 extra lines of code.</p>
+        </div>
+      </div>
+      <div class="upgrade-item">
+        <div class="upgrade-plus">+</div>
+        <div>
+          <div class="upgrade-title">GitHub v1.0.0 release with tagged README</div>
+          <p class="upgrade-desc">Shows professional release practices. Include setup instructions, dataset info, sample API calls, and your evaluation results. 30 minutes of work — pays off for months.</p>
+        </div>
+      </div>
+      <div class="upgrade-item">
+        <div class="upgrade-plus">+</div>
+        <div>
+          <div class="upgrade-title">Document your cold start strategy explicitly</div>
+          <p class="upgrade-desc">Most student projects ignore this entirely. A section in your README explaining how you handled new users vs new items shows real-world thinking — interviewers notice immediately.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">RecSys Guide</div>
+  <div>E-Commerce Recommendation Systems · Cloud Analytics Project</div>
+  <div>Built for first-time builders</div>
+</footer>
+
+<script>
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.06 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
